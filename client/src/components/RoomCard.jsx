@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import { Link } from 'react-router-dom';
 import { formatPrice, toDateInputValue, todayLocal } from '../services/dates';
 
@@ -6,12 +6,18 @@ import { formatPrice, toDateInputValue, todayLocal } from '../services/dates';
  * Tarjeta de habitación mostrada en la página principal.
  * Permite elegir las fechas de entrada y salida directamente en la tarjeta,
  * calcula un importe estimado y enlaza al checkout con la selección en los
- * parámetros de la URL.
+ * parámetros de la URL. El hero de la home puede pre-cargar fechas a través
+ * de initialCheckIn / initialCheckOut.
  */
-export default function RoomCard({ room }) {
-  const [checkIn, setCheckIn] = useState('');
-  const [checkOut, setCheckOut] = useState('');
+export default function RoomCard({ room, initialCheckIn = '', initialCheckOut = '' }) {
+  const [checkIn, setCheckIn] = useState(initialCheckIn);
+  const [checkOut, setCheckOut] = useState(initialCheckOut);
   const [error, setError] = useState('');
+
+  useEffect(() => {
+    if (initialCheckIn) setCheckIn(initialCheckIn);
+    if (initialCheckOut) setCheckOut(initialCheckOut);
+  }, [initialCheckIn, initialCheckOut]);
 
   const minCheckIn = toDateInputValue(todayLocal());
 
