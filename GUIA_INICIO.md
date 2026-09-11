@@ -186,6 +186,33 @@ Con las tres terminales abiertas (MongoDB, backend, frontend):
 El panel permite crear habitaciones, editar la tarifa por noche y activar o
 desactivar su disponibilidad.
 
+### 4.1 Configurar los datos del alojamiento
+
+La portada pública (teléfono, WhatsApp, correo, redes sociales, dirección y
+mapa) se lee desde un único archivo de configuración:
+
+```
+client/src/services/site.js
+```
+
+Ajusta estos valores antes de publicar:
+
+| Campo            | Qué es                                                        |
+| ---------------- | ------------------------------------------------------------- |
+| `name`           | Nombre del alojamiento                                        |
+| `tagline`        | Frase de bienvenida de la portada                             |
+| `phone` / `phoneHref` | Teléfono visible y enlace `tel:`                          |
+| `whatsappNumber` | WhatsApp con código de país, sin `+` ni espacios (ej. `34600000000`) |
+| `whatsappMessage`| Saludo inicial del botón flotante de WhatsApp                 |
+| `email` / `emailHref` | Correo de reservas                                        |
+| `address`        | Dirección: con ella se generan el mapa y el botón "Abrir en Google Maps" |
+| `instagram` / `facebook` | Perfiles de redes sociales                           |
+
+> Las fotos de la portada y de la galería son marcadores de `picsum.photos`
+> (solo se ven con internet). Para usar tus propias fotos, sustituye las URLs
+> en `client/src/styles.css` (sección `.landing-hero`) y en
+> `client/src/components/Gallery.jsx`.
+
 ---
 
 ## 5. Detener todo
@@ -206,7 +233,8 @@ Cierra las terminales con `Ctrl + C` en cada una:
 | "Correo o contraseña incorrectos" al hacer login | La BD no tiene el admin | Ejecuta `npm run seed` en `server/` |
 | `npm run seed` dice "Missing script" | package.json sin el script `seed` | Debe decir `"seed": "node seed.js"` en `scripts` |
 | El puerto 5000 o 5173 está ocupado | Otra app usa el puerto | Cierra la otra app o cambia `PORT` en el `.env` |
-| Las imágenes de habitaciones no cargan | `picsum.photos` sin conexión | Es normal sin internet; el resto de la app funciona |
+| Las imágenes (portada, galería o habitaciones) no cargan | `picsum.photos` sin conexión | Es normal sin internet; el resto de la app funciona |
+| El botón de WhatsApp o el mapa no muestran tus datos | Datos de ejemplo en `site.js` | Edita `client/src/services/site.js` con teléfono, dirección y redes reales |
 
 ---
 
