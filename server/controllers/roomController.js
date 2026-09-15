@@ -1,3 +1,4 @@
+import mongoose from 'mongoose';
 import Room from '../models/Room.js';
 import Booking from '../models/Booking.js';
 import { sanitizeString, asyncHandler } from '../middlewares/validation.js';
@@ -73,6 +74,7 @@ export const createRoom = asyncHandler(async (req, res) => {
     pricePerNight,
     amenities: rawAmenities,
     imageUrl: sanitizeString(req.body.imageUrl, 300),
+    number: sanitizeString(req.body.number, 20),
     active,
   });
 
@@ -132,6 +134,10 @@ export const updateRoom = asyncHandler(async (req, res) => {
     updates.active = req.body.active;
   }
 
+  if (req.body.number !== undefined) {
+    updates.number = sanitizeString(req.body.number, 20);
+  }
+
   const updated = await Room.findByIdAndUpdate(room._id, updates, {
     new: true,
     runValidators: true,
@@ -139,6 +145,85 @@ export const updateRoom = asyncHandler(async (req, res) => {
 
   return res.json({ room: updated });
 });
+
+/**
+ * GET /api/rooms/:id/calendar.ics
+ * Público: alimenta la sección "Integraciones y Calendario" del panel admin.
+ * Devuelve el calendario de ocupación de la habitación en formato iCalendar
+ * (RFC 5545) con un bloque VEVENT por cada reserva activa (no cancelada),
+ * listo para pegar en Booking, Airbnb o cualquier canal compatible.
+ */
+export const getRoomCalendarIcs = asyncHandler(async (req, res) => {
+  if (!mongoose.isValidObjectId(req.params.id)) {
+    return res.status(404).json({ message: 'Habitación no encontrada' });
+  }
+
+  const room = await Room.findById(req.params.id);
+  if (!room) {
+    return res.status(404).json({ message: 'Habitación no encontrada' });
+  }
+
+  const bookings = await Booking.find({
+    room: room._id,
+    status: { $ne: 'cancelled' },
+  }).select('referenceCode guest.fullName checkIn checkOut');
+
+  const now = formatIcalDateTime(new Date());
+  const roomLabel = escapeIcalText([`Habitación ${room.number}`.trim(), room.name].filter(Boolean).join(' · '));
+
+  const lines = [
+    'BEGIN:VCALENDAR',
+    'VERSION:2.0',
+    'PRODID:-//Boutique Carajito//Hotel//ES',
+    'CALSCALE:GREGORIAN',
+    'METHOD:PUBLISH',
+    `X-WR-CALNAME:${roomLabel}`,
+    ...bookings.flatMap((booking) => [
+      'BEGIN:VEVENT',
+      `UID:${room._id}-${booking._id}@boutiquecarajito.local`,
+      `DTSTAMP:${now}`,
+      `DTSTART;VALUE=DATE:${formatIcalDate(booking.checkIn)}`,
+      `DTEND;VALUE=DATE:${formatIcalDate(booking.checkOut)}`,
+      `SUMMARY:Ocupada - ${escapeIcalText(booking.referenceCode)} (${escapeIcalText(booking.guest?.fullName || 'Huésped')})`,
+      'TRANSP:OPAQUE',
+      'END:VEVENT',
+    ]),
+    'END:VCALENDAR',
+  ];
+
+  res.set({
+    'Content-Type': 'text/calendar; charset=utf-8',
+    'Content-Disposition': `attachment; filename="habitacion-${room.number || room._id}.ics"`,
+  });
+  return res.send(lines.join('\r\n'));
+});
+
+/** "20260915" para DTSTART/DTEND de todo el día (fecha de calendario local). */
+function formatIcalDate(d) {
+  const date = new Date(d);
+  return `${date.getFullYear()}${String(date.getMonth() + 1).padStart(2, '0')}${String(
+    date.getDate()
+  ).padStart(2, '0')}`;
+}
+
+/** "20260915T120000Z" en formato UTCDateTime para DTSTAMP. */
+function formatIcalDateTime(d) {
+  const date = new Date(d);
+  return `${date.getUTCFullYear()}${String(date.getUTCMonth() + 1).padStart(2, '0')}${String(
+    date.getUTCDate()
+  ).padStart(2, '0')}T${String(date.getUTCHours()).padStart(2, '0')}${String(
+    date.getUTCMinutes()
+  ).padStart(2, '0')}${String(date.getUTCSeconds()).padStart(2, '0')}Z`;
+}
+
+/** Escape de texto plano según RFC 5545 (\, ; , y saltos de línea). */
+function escapeIcalText(value) {
+  return String(value || '')
+    .replace(/\\/g, '\\\\')
+    .replace(/;/g, '\\;')
+    .replace(/,/g, '\\,')
+    .replace(/\r?\n/g, '\\n');
+}
 
 /**
  * DELETE /api/rooms/:id

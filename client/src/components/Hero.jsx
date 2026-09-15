@@ -43,7 +43,7 @@ export default function Hero({ onSearch }) {
         <p className="landing-eyebrow">{site.name}</p>
         <h1>{site.tagline}</h1>
         <p className="landing-hero-sub">
-          Reserva directo en nuestra web: mejores tarifas, confirmación inmediata y sin
+          Reservá directo desde nuestra web: mejores tarifas, confirmación inmediata y sin
           comisiones de plataformas.
         </p>
 

@@ -30,7 +30,7 @@ export default function RoomCard({ room, initialCheckIn = '', initialCheckOut = 
 
   const handleBookClick = () => {
     if (!checkIn || !checkOut || checkOut <= checkIn) {
-      setError('Elige una fecha de entrada y una de salida válidas.');
+      setError('Elegí una fecha de entrada y una de salida válidas.');
       return;
     }
   };

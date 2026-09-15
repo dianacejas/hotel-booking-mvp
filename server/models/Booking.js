@@ -81,7 +81,7 @@ const bookingSchema = new mongoose.Schema(
     },
     status: {
       type: String,
-      enum: ['confirmed', 'cancelled'],
+      enum: ['pending', 'confirmed', 'cancelled'],
       default: 'confirmed',
       index: true,
     },
@@ -89,6 +89,35 @@ const bookingSchema = new mongoose.Schema(
       type: Number,
       min: [0, 'El total no puede ser negativo'],
       required: true,
+    },
+    // Servicios adicionales contratados (upselling). Cada ítem guarda el
+    // nombre legible y el importe TOTAL del extra (los extras por noche ya
+    // vienen multiplicados por la cantidad de noches por el cliente).
+    extrasSeleccionados: {
+      type: [
+        {
+          name: {
+            type: String,
+            required: [true, 'El nombre del servicio extra es obligatorio'],
+            trim: true,
+            maxlength: [120, 'El nombre del extra no puede superar los 120 caracteres'],
+          },
+          price: {
+            type: Number,
+            required: [true, 'El importe del servicio extra es obligatorio'],
+            min: [0, 'El importe del extra no puede ser negativo'],
+          },
+        },
+      ],
+      default: [],
+      _id: false,
+    },
+    // Método de pago elegido en el checkout. Se guarda como clave corta y
+    // la etiqueta en español se resuelve en el cliente.
+    metodoPago: {
+      type: String,
+      enum: ['tarjeta', 'transferencia', 'checkin'],
+      default: 'checkin',
     },
     // Referencia única legible mostrada a los huéspedes, p. ej. RES-9K4XQ
     referenceCode: {

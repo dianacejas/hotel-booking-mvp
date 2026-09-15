@@ -8,7 +8,7 @@ const site = {
     'Hola, me gustaría consultar por disponibilidad para alojarme en Boutique Carajito.',
   email: 'reservas@boutiquecarajito.com',
   emailHref: 'mailto:reservas@boutiquecarajito.com',
-  address: 'Av. de los Naranjos 2150, Madrid, España',
+  address: 'Av. San Martín 898, Q8370 San Martín de los Andes, Neuquén',
   instagram: 'https://instagram.com/boutiquecarajito',
   facebook: 'https://facebook.com/boutiquecarajito',
 };

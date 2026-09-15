@@ -44,7 +44,7 @@ function PawIcon() {
 const items = [
   {
     title: 'Entrada y salida',
-    text: 'Entrada desde las 15:00 h y salida hasta las 11:00 h. ¿Necesitas flexibilidad? Consúltanos.',
+    text: 'Entrada desde las 15:00 h y salida hasta las 11:00 h. ¿Necesitás flexibilidad? Consultános.',
     icon: ClockIcon,
   },
   {
@@ -58,8 +58,8 @@ const items = [
     icon: WifiIcon,
   },
   {
-    title: 'Aparcamiento y mascotas',
-    text: 'Plaza de aparcamiento gratuita y mascotas bienvenidas sin cargo adicional.',
+    title: 'Estacionamiento y mascotas',
+    text: 'Estacionamiento gratuito dentro del alojamiento y mascotas bienvenidas sin cargo adicional.',
     icon: PawIcon,
   },
 ];
@@ -69,7 +69,7 @@ export default function Amenities() {
     <section className="landing-section">
       <div className="section-head">
         <p className="section-title">Servicios del hotel</p>
-        <h2>Todo lo que necesitas para descansar</h2>
+        <h2>Todo lo que necesitás para descansar</h2>
         <p>Comodidades pensadas para que te sientas como en casa desde el primer minuto.</p>
       </div>
       <div className="amenities-grid">

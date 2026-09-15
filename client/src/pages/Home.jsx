@@ -7,6 +7,7 @@ import Amenities from '../components/Amenities';
 import Gallery from '../components/Gallery';
 import Location from '../components/Location';
 import FAQ from '../components/FAQ';
+import ReviewsSection from '../components/ReviewsSection';
 
 /**
  * Página principal pública.
@@ -102,6 +103,7 @@ export default function Home() {
 
       <Amenities />
       <Gallery />
+      <ReviewsSection />
       <Location />
       <FAQ />
     </div>

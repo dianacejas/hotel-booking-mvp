@@ -40,17 +40,17 @@ const faqs = [
   {
     id: 'cancel',
     q: '¿Puedo cancelar o modificar mi reserva?',
-    a: 'Puedes cancelar sin cargo hasta 48 h antes de la entrada; dentro de ese plazo se aplica una noche de penalización. Los cambios de fechas están sujetos a disponibilidad, escríbenos por WhatsApp o llámanos y lo gestionamos contigo.',
+    a: 'Podés cancelar sin cargo hasta 48 h antes de la entrada; dentro de ese plazo se aplica una noche de penalización. Los cambios de fechas están sujetos a disponibilidad. Escribinos por WhatsApp o llamanos y lo gestionamos con vos.',
   },
   {
     id: 'payment',
-    q: '¿Qué métodos de pago aceptáis?',
-    a: 'Aceptamos efectivo, transferencia local y tarjetas de crédito o débito. Pagas directamente en el alojamiento: nunca cobramos nada por adelantado.',
+    q: '¿Qué métodos de pago aceptás?',
+    a: 'Aceptamos efectivo, transferencia local y tarjetas de crédito o débito. Pagás directamente en el alojamiento: nunca cobramos nada por adelantado.',
   },
   {
     id: 'crib',
-    q: '¿Tenéis cunas o camas para bebés?',
-    a: 'Sí, disponemos de cuna para bebés de 0 a 2 años sin coste adicional, con sujeción a disponibilidad. Indícala al reservar y la dejaremos preparada.',
+    q: '¿Tenés cunas para bebés?',
+    a: 'Sí, disponemos de cuna para bebés de 0 a 2 años sin coste adicional, con sujeción a disponibilidad. Indicala al reservar y la dejaremos preparada.',
   },
   {
     id: 'quiet',

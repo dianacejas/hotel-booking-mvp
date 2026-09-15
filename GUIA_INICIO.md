@@ -184,7 +184,8 @@ Con las tres terminales abiertas (MongoDB, backend, frontend):
 | Contraseña  | `admin12345`       |
 
 El panel permite crear habitaciones, editar la tarifa por noche y activar o
-desactivar su disponibilidad.
+desactivar su disponibilidad, gestionar las reservas realizadas y sincronizar el
+calendario de cada habitación (pestañas **Habitaciones** y **Reservas**).
 
 ### 4.1 Configurar los datos del alojamiento
 
