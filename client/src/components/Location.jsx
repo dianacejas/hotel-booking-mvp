@@ -67,15 +67,15 @@ function WalkIcon() {
 const points = [
   {
     icon: CarIcon,
-    text: 'En coche: 15 min del centro y 40 min del aeropuerto. Tienes aparcamiento gratuito en el alojamiento.',
+    text: 'En auto: a 15 min del centro y 40 min del aeropuerto. Contás con estacionamiento gratuito en el alojamiento.',
   },
   {
     icon: TrainIcon,
-    text: 'Transporte público: parada de bus a 200 m y estación de tren a 15 min a pie.',
+    text: 'Transporte público: parada de colectivo a 200 m y terminal de micros a 15 min.',
   },
   {
     icon: PlaneIcon,
-    text: 'En avión: aeropuerto a 40 min; podemos ayudarte a organizar un traslado.',
+    text: 'En avión: aeropuerto a 40 min; te ayudamos a coordinar el traslado.',
   },
 ];
 
@@ -90,18 +90,18 @@ const near = [
     icon: MountainIcon,
     title: 'Mirador del parque',
     text: 'La mejor panorámica de la ciudad, sin falta al atardecer.',
-    distance: '10 min en coche',
+    distance: '10 min en auto',
   },
   {
     icon: WalkIcon,
     title: 'Sendero del río',
     text: 'Paseo llano de 4 km bordeando el agua, perfecto a pie o en bici.',
-    distance: '15 min en coche',
+    distance: '15 min en auto',
   },
 ];
 
 const mapsUrl = `https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(site.address)}`;
-const mapsEmbed = `https://www.google.com/maps?q=${encodeURIComponent(site.address)}&output=embed`;
+const mapsEmbed = `https://www.google.com/maps?q=${encodeURIComponent(site.address)}&z=15&hl=es&output=embed`;
 
 export default function Location() {
   return (

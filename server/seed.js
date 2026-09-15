@@ -37,6 +37,7 @@ async function seed() {
   if (roomCount === 0) {
     const sampleRooms = [
       {
+        number: '101',
         name: 'Habitación Queen Acogedora',
         description: 'Una habitación compacta con cama de matrimonio y vistas al jardín, ideal para viajeros en solitario y parejas.',
         capacity: 2,
@@ -46,6 +47,7 @@ async function seed() {
         active: true,
       },
       {
+        number: '202',
         name: 'Suite King de Lujo',
         description: 'Amplia suite con cama king, zona de estar, ducha de lluvia con vestidor y balcón.',
         capacity: 3,
@@ -55,6 +57,7 @@ async function seed() {
         active: true,
       },
       {
+        number: '303',
         name: 'Lodge Familiar',
         description: 'Lodge de dos dormitorios para hasta cinco personas, con cocina equipada y patio con jardín.',
         capacity: 5,
@@ -64,6 +67,7 @@ async function seed() {
         active: true,
       },
       {
+        number: 'PH-1',
         name: 'Penthouse Panorámica',
         description: 'Penthouse en la última planta con ventanales de suelo a techo y terraza envolvente.',
         capacity: 2,

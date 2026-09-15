@@ -1,9 +1,10 @@
 # Boutique Carajito — Motor de reserva directa
 
 Aplicación web de reservas para un alojamiento boutique: el **huésped** descubre
-habitaciones, elige fechas y reserva directamente con confirmación inmediata.
-El **administrador** dispone de una utilidad mínima para gestionar el inventario
-de habitaciones (crear, editar tarifas, activar/desactivar disponibilidad).
+habitaciones, elige fechas, suma servicios adicionales y reserva directamente con
+confirmación inmediata y un comprobante imprimible. El **administrador** gestiona
+el inventario de habitaciones y sus calendarios (a través de un panel protegido
+con pestañas para habitaciones y reservas).
 
 - **Frontend**: React 18 + Vite 5 (SPA en español, mobile-first).
 - **Backend**: Express + Mongoose (MERN), JWT para la zona de administración.
@@ -112,10 +113,32 @@ El script `seed` crea la cuenta por defecto:
 > antes de ejecutar `npm run seed` (por ejemplo, en producción).
 
 Para acceder: pulsa **"Iniciar sesión / Admin"** en la barra superior e
-introduce las credenciales. El panel permite crear habitaciones, editar la
-tarifa por noche y activar o desactivar su disponibilidad con un interruptor.
+introduce las credenciales. El panel tiene dos pestañas:
+
+- **Habitaciones**: crear, editar tarifa por noche, número, activar/desactivar
+  disponibilidad y, por cada habitación, la sección **"Integraciones y
+  Calendario"** con su enlace iCal (`/api/rooms/:id/calendar.ics`) para pegar en
+  Booking/Airbnb y el campo para vincular un calendario externo (simulado en
+  `localStorage`).
+- **Reservas realizadas**: tabla con búsqueda por huésped o código, filtro por
+  estado (confirmadas / pendientes / canceladas) y acciones rápidas de
+  confirmar y cancelar. Al cancelar una reserva se liberan sus noches; al
+  reactivarla se comprueba que las fechas sigan libres.
+
+## Novedades de la versión 1.4
+
+- **Checkout interactivo con upselling**: el huésped suma extras (desayuno,
+  traslado, late check-out) con precio dinámico por noche antes de confirmar.
+- **Métodos de pago simulados**: tarjeta, transferencia bancaria o pago en el
+  check-in; el importe total y el método quedan guardados en la reserva.
+- **Comprobante imprimible**: la confirmación incluye un voucher que se guarda
+  como PDF (`Imprimir / Guardar Voucher PDF`).
+- **Panel admin de reservas**: lista, busca, filtra, confirma o cancela reservas.
+- **Reseñas de huéspedes** en la portada como prueba social.
+- **Sincronización de calendario iCal** por habitación (export + enlace).
 
 ## Consultas del huésped
 
 - El huésped puede consultar una reserva creada en **"Mi reserva"** usando el
-  código de referencia (`RES-XXXXX`) y el correo con el que reservó.
+  código de referencia (`RES-XXXXX`) y el correo con el que reservó. La consulta
+  muestra también los extras contratados y el método de pago elegido.

@@ -2,7 +2,10 @@ import { useState } from 'react';
 import api, { ApiError } from '../services/api';
 import Alert from '../components/Alert';
 import StatusBadge from '../components/StatusBadge';
+import { PAYMENT_METHODS } from '../components/BookingCheckout';
 import { formatPrice, formatDate, nightsBetween } from '../services/dates';
+
+const METHOD_LABEL = Object.fromEntries(PAYMENT_METHODS.map((m) => [m.id, m.label]));
 
 /**
  * Consulta pública de reservas.
@@ -33,12 +36,12 @@ export default function BookingLookup() {
 
   return (
     <div className="page page-narrow">
-      <h1>Encuentra tu reserva</h1>
+      <h1>Encontrá tu reserva</h1>
       <p className="muted">
         Introduce el código de referencia de tu confirmación y el correo con el que reservaste.
       </p>
 
-      <form onSubmit={handleSearch} className="card card-pad">
+      <form onSubmit={handleSearch} className="card card-pad lookup-form">
         <label className="field-label" htmlFor="ref">
           Código de referencia
         </label>
@@ -75,7 +78,10 @@ export default function BookingLookup() {
           <ul className="summary-list">
             <li>
               <span>Habitación</span>
-              <strong>{booking.room?.name || '—'}</strong>
+              <strong>
+                {booking.room?.number ? `N° ${booking.room.number} · ` : ''}
+                {booking.room?.name || '—'}
+              </strong>
             </li>
             <li>
               <span>Entrada</span>
@@ -89,6 +95,16 @@ export default function BookingLookup() {
               <span>Noches</span>
               <strong>{nightsBetween(booking.checkIn, booking.checkOut)}</strong>
             </li>
+            <li>
+              <span>Método de pago</span>
+              <strong>{METHOD_LABEL[booking.metodoPago] || 'Pagar al llegar (Check-in)'}</strong>
+            </li>
+            {(booking.extrasSeleccionados || []).map((extra) => (
+              <li key={extra.name}>
+                <span>{extra.name}</span>
+                <strong>{formatPrice(extra.price)}</strong>
+              </li>
+            ))}
             <li>
               <span>Total</span>
               <strong>{formatPrice(booking.totalPrice)}</strong>

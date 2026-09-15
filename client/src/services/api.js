@@ -65,6 +65,18 @@ export const api = {
     );
   },
 
+  // ---- Reservas (admin) ------------------------------------------------------
+  async listAdminBookings() {
+    return request('/api/admin/reservas', { token: getToken() });
+  },
+  async updateAdminBookingStatus(id, status) {
+    return request(`/api/admin/reservas/${id}`, {
+      method: 'PATCH',
+      body: { status },
+      token: getToken(),
+    });
+  },
+
   // ---- Auth de administración ------------------------------------------------
   async login(email, password) {
     return request('/api/auth/login', { method: 'POST', body: { email, password } });

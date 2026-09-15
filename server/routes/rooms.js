@@ -2,6 +2,7 @@ import { Router } from 'express';
 import {
   listRooms,
   getRoom,
+  getRoomCalendarIcs,
   listRoomsForAdmin,
   createRoom,
   updateRoom,
@@ -16,6 +17,8 @@ router.get('/', listRooms);
 // OJO: /manage debe registrarse antes que /:id o Express trataría "manage"
 // como un ObjectId y enrutaría la petición a getRoom.
 router.get('/manage', protect, listRoomsForAdmin);
+// Calendario de ocupación en iCal, usado por "Integraciones y Calendario".
+router.get('/:id/calendar.ics', getRoomCalendarIcs);
 router.get('/:id', getRoom);
 
 // Admin — gestión del inventario de habitaciones

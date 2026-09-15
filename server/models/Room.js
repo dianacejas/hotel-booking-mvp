@@ -7,6 +7,14 @@ import mongoose from 'mongoose';
  */
 const roomSchema = new mongoose.Schema(
   {
+    // Número/identificador físico de la habitación, p. ej. "101" u "8-B".
+    // Opcional: las habitaciones antiguas pueden no tenerlo.
+    number: {
+      type: String,
+      trim: true,
+      maxlength: [20, 'El número de la habitación no puede superar los 20 caracteres'],
+      default: '',
+    },
     name: {
       type: String,
       required: [true, 'El nombre de la habitación es obligatorio'],
