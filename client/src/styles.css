@@ -1,5 +1,5 @@
 /* ---------------------------------------------------------------------------
-   Boutique Carajito — sistema de diseño limpio y sin dependencias (CSS puro).
+   Altos del Lago Lodge & Boutique — sistema de diseño limpio y sin dependencias (CSS puro).
    Paleta boutique: Blue Slate, Seagrass, Muted Teal, Dry Sage, Cotton Rose.
    Mobile-first: grid y flex con envoltura; nada se desborda por debajo de 768px.
    Modo oscuro controlado con data-theme="dark" sobre <html>.
@@ -391,6 +391,7 @@ button {
 
 /* ------------------------------------------------------------------ cards */
 .card {
+  position: relative;
   background: var(--surface);
   border: 1px solid var(--line);
   border-radius: var(--radius);
@@ -407,10 +408,17 @@ button {
   grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
   gap: 1.25rem;
   margin-top: 1.5rem;
+  overflow: visible;
 }
-/* Elevación suave al pasar el cursor sobre las tarjetas del catálogo. */
+/* Elevación suave al pasar el cursor sobre las tarjetas del catálogo.
+   El z-index evita que la tarjeta elevada quede recortada por la sombra de
+   las tarjetas vecinas (contexto de apilamiento). */
+.room-grid .card {
+  z-index: 1;
+}
 .room-grid .card:hover {
-  transform: translateY(-2px);
+  z-index: 10;
+  transform: translateY(-4px);
   border-color: var(--muted-teal);
   box-shadow: var(--shadow-hover);
 }
@@ -656,9 +664,7 @@ input:disabled {
   padding: 1rem 1.1rem;
 }
 .room-row:hover {
-  transform: translateY(-2px);
-  border-color: var(--muted-teal);
-  box-shadow: var(--shadow-hover);
+  border-color: transparent;
 }
 .room-row-info {
   display: flex;
@@ -700,22 +706,36 @@ input:disabled {
   list-style: none;
   margin: 0;
   padding: 0;
+  width: 100%;
+  max-width: 600px;
+  overflow-wrap: break-word;
 }
 .summary-list li {
   display: flex;
   justify-content: space-between;
+  align-items: flex-start;
   flex-wrap: wrap;
   gap: 0.5rem 1rem;
   padding: 0.5rem 0;
   border-bottom: 1px dashed var(--line);
   font-size: 0.92rem;
+  min-height: 2.4rem;
 }
 .summary-list li span {
   color: var(--ink-soft);
+  overflow-wrap: break-word;
+}
+.summary-list li strong {
+  min-width: 0;
+  text-align: right;
+  overflow-wrap: anywhere;
+  word-break: break-word;
 }
 .total-row {
   display: flex;
   justify-content: space-between;
+  flex-wrap: wrap;
+  gap: 0.4rem 1rem;
   font-size: 1.1rem;
   font-weight: 700;
   margin-top: 0.9rem;
@@ -725,6 +745,7 @@ input:disabled {
 .summary-room {
   font-weight: 700;
   margin: 0 0 0.4rem;
+  overflow-wrap: anywhere;
 }
 
 /* ----------------------------------------------------------- confirmation  */
@@ -859,11 +880,34 @@ input:disabled {
   display: flex;
   align-items: center;
   overflow: hidden;
-  background: linear-gradient(180deg, rgba(31, 42, 46, 0.45) 0%, rgba(31, 42, 46, 0.74) 100%),
-    url('https://picsum.photos/seed/carajito-hero/1600/900') center / cover no-repeat;
+  background: var(--ink);
+}
+/* Video de fondo del hero: cubre toda la sección y queda por debajo del
+   degradado y del contenido. */
+.hero-video {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  z-index: 0;
+  pointer-events: none;
+}
+/* Degradado sobre el video para garantizar el contraste del texto blanco. */
+.hero-overlay {
+  position: absolute;
+  inset: 0;
+  z-index: 1;
+  background: linear-gradient(
+    180deg,
+    rgba(31, 42, 46, 0.35) 0%,
+    rgba(31, 42, 46, 0.62) 55%,
+    rgba(31, 42, 46, 0.78) 100%
+  );
 }
 .landing-hero-inner {
   position: relative;
+  z-index: 2;
   width: 100%;
   max-width: 1080px;
   margin: 0 auto;
@@ -1484,7 +1528,7 @@ input:disabled {
 }
 
 /* ---------------------------------------------------------------------------
-   Upselling y checkout interactivo (BookingCheckout)
+   Upselling y checkout interactivo (CheckoutModal)
    Seleccionables, resumen dinámico de precios y pestañas de pago simuladas.
 --------------------------------------------------------------------------- */
 .checkout-form {
@@ -1559,6 +1603,10 @@ input:disabled {
   margin-bottom: 1rem;
 }
 .pay-tab {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.4rem;
   flex: 1 1 auto;
   min-width: 0;
   padding: 0.6rem 0.9rem;
@@ -2116,5 +2164,94 @@ input:disabled {
   }
   .filter-row {
     width: 100%;
+  }
+}
+
+/* --------------------------------------------------------------------
+   Aparición al hacer scroll (useReveal + IntersectionObserver).
+   Solo se anima cuando el usuario no pidió reducir el movimiento.
+--------------------------------------------------------------------- */
+.reveal {
+  opacity: 0;
+  transform: translateY(24px);
+  transition: opacity 0.6s ease-out, transform 0.6s ease-out;
+  will-change: opacity, transform;
+}
+.reveal-visible {
+  opacity: 1;
+  transform: none;
+}
+
+/* Escalonado suave de las tarjetas dentro de una sección revelada. */
+.reveal .card {
+  opacity: 0;
+  transform: translateY(18px);
+  transition: opacity 0.5s ease-out, transform 0.5s ease-out;
+}
+.reveal-visible .card {
+  opacity: 1;
+  transform: none;
+}
+.reveal-visible .card:nth-child(1) { transition-delay: 0.05s; }
+.reveal-visible .card:nth-child(2) { transition-delay: 0.12s; }
+.reveal-visible .card:nth-child(3) { transition-delay: 0.19s; }
+.reveal-visible .card:nth-child(4) { transition-delay: 0.26s; }
+.reveal-visible .card:nth-child(5) { transition-delay: 0.33s; }
+.reveal-visible .card:nth-child(6) { transition-delay: 0.4s; }
+
+@media (prefers-reduced-motion: reduce) {
+  .reveal,
+  .reveal .card {
+    opacity: 1;
+    transform: none;
+    transition: none;
+  }
+}
+
+/* --------------------------------------------------------------------
+   Panel Mercado Pago en el checkout + edición de habitaciones (admin).
+--------------------------------------------------------------------- */
+.mp-intro {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  margin: 0 0 0.5rem;
+}
+
+/* Bloque de edición de cada habitación en el panel. */
+.room-edit .form-grid {
+  padding: 0 1.1rem 0.25rem;
+}
+.room-row-head {
+  grid-template-columns: minmax(0, 1fr) auto;
+}
+.room-row-actions {
+  display: flex;
+  align-items: center;
+  justify-content: flex-end;
+  gap: 0.6rem;
+  flex-wrap: wrap;
+}
+.room-saved {
+  padding: 0.25rem 0.65rem;
+  border-radius: 999px;
+  font-size: 0.78rem;
+  font-weight: 600;
+  margin: 0;
+}
+.room-row-foot {
+  grid-template-columns: auto auto;
+  justify-content: start;
+  gap: 0.6rem;
+  padding-top: 0;
+}
+
+@media (max-width: 768px) {
+  .room-row-head,
+  .room-row-foot {
+    grid-template-columns: 1fr;
+  }
+  .room-row-actions {
+    justify-content: flex-start;
   }
 }

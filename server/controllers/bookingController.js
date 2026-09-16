@@ -12,7 +12,7 @@ import {
 } from '../middlewares/validation.js';
 
 /** Métodos de pago admitidos en el checkout. */
-export const PAYMENT_METHODS = ['tarjeta', 'transferencia', 'checkin'];
+export const PAYMENT_METHODS = ['tarjeta', 'transferencia', 'checkin', 'mercadopago'];
 
 /** Estados posibles de una reserva (se guardan como clave corta). */
 export const BOOKING_STATUSES = ['pending', 'confirmed', 'cancelled'];
@@ -158,7 +158,7 @@ async function saveWithReferenceRetry(doc) {
  * por noche llegan multiplicados por la cantidad de noches desde el
  * checkout). Devuelve siempre un array limpio y numerable.
  */
-function sanitizeExtras(input) {
+export function sanitizeExtras(input) {
   if (!Array.isArray(input)) return [];
   return input
     .slice(0, 12)

@@ -1,4 +1,4 @@
-# Guía de inicio — Boutique Carajito
+# Guía de inicio — Altos del Lago Lodge & Boutique
 
 Instrucciones paso a paso para levantar el proyecto completo (MongoDB, backend y
 frontend) **sin necesidad de ninguna herramienta externa**. Solo usas la
@@ -128,6 +128,9 @@ MongoDB **no** se inicia solo; hay que arrancar el servicio cada vez.
    ```
    Valores por defecto: `PORT=5000`, `MONGO_URI=mongodb://127.0.0.1:27017/hotel_booking_db`.
    Cambia `JWT_SECRET` a un valor largo y aleatorio si quieres.
+   Para habilitar **Mercado Pago** en modo prueba, rellena `MP_ACCESS_TOKEN` con
+   un token `TEST-` de tu cuenta; si lo dejas vacío, el pago online devuelve
+   `503` y el resto de métodos de pago siguen funcionando.
 
 3. Sembrar la base de datos (crea el admin y 4 habitaciones de ejemplo). Es
    **idempotente**: si ya existe algo, no lo duplica.
@@ -183,9 +186,10 @@ Con las tres terminales abiertas (MongoDB, backend, frontend):
 | Email       | `admin@hotel.local` |
 | Contraseña  | `admin12345`       |
 
-El panel permite crear habitaciones, editar la tarifa por noche y activar o
-desactivar su disponibilidad, gestionar las reservas realizadas y sincronizar el
-calendario de cada habitación (pestañas **Habitaciones** y **Reservas**).
+El panel permite **crear y editar por completo** cada habitación (nombre,
+número, descripción, capacidad, tarifa por noche, servicios, imagen y
+disponibilidad), gestionar las reservas realizadas y sincronizar el calendario
+de cada habitación (pestañas **Habitaciones** y **Reservas**).
 
 ### 4.1 Configurar los datos del alojamiento
 
@@ -193,7 +197,7 @@ La portada pública (teléfono, WhatsApp, correo, redes sociales, dirección y
 mapa) se lee desde un único archivo de configuración:
 
 ```
-client/src/services/site.js
+client/src/services/site.ts
 ```
 
 Ajusta estos valores antes de publicar:
@@ -210,9 +214,10 @@ Ajusta estos valores antes de publicar:
 | `instagram` / `facebook` | Perfiles de redes sociales                           |
 
 > Las fotos de la portada y de la galería son marcadores de `picsum.photos`
-> (solo se ven con internet). Para usar tus propias fotos, sustituye las URLs
-> en `client/src/styles.css` (sección `.landing-hero`) y en
-> `client/src/components/Gallery.jsx`.
+> (solo se ven con internet); el hero usa además un video de fondo de Coverr.
+> Para usar tus propias fotos, sustituye las URLs en
+> `client/src/components/Hero.tsx` (video y póster) y en
+> `client/src/components/Gallery.tsx`.
 
 ---
 
@@ -235,7 +240,8 @@ Cierra las terminales con `Ctrl + C` en cada una:
 | `npm run seed` dice "Missing script" | package.json sin el script `seed` | Debe decir `"seed": "node seed.js"` en `scripts` |
 | El puerto 5000 o 5173 está ocupado | Otra app usa el puerto | Cierra la otra app o cambia `PORT` en el `.env` |
 | Las imágenes (portada, galería o habitaciones) no cargan | `picsum.photos` sin conexión | Es normal sin internet; el resto de la app funciona |
-| El botón de WhatsApp o el mapa no muestran tus datos | Datos de ejemplo en `site.js` | Edita `client/src/services/site.js` con teléfono, dirección y redes reales |
+| El botón de WhatsApp o el mapa no muestran tus datos | Datos de ejemplo en `site.ts` | Edita `client/src/services/site.ts` con teléfono, dirección y redes reales |
+| El pago con Mercado Pago devuelve error 503 | `MP_ACCESS_TOKEN` vacío | Define un token `TEST-` en `server/.env` o usa otro método de pago |
 
 ---
 

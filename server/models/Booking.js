@@ -116,7 +116,7 @@ const bookingSchema = new mongoose.Schema(
     // la etiqueta en español se resuelve en el cliente.
     metodoPago: {
       type: String,
-      enum: ['tarjeta', 'transferencia', 'checkin'],
+      enum: ['tarjeta', 'transferencia', 'checkin', 'mercadopago'],
       default: 'checkin',
     },
     // Referencia única legible mostrada a los huéspedes, p. ej. RES-9K4XQ
