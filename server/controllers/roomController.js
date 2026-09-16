@@ -174,13 +174,13 @@ export const getRoomCalendarIcs = asyncHandler(async (req, res) => {
   const lines = [
     'BEGIN:VCALENDAR',
     'VERSION:2.0',
-    'PRODID:-//Boutique Carajito//Hotel//ES',
+    'PRODID:-//Altos del Lago Lodge//Hotel//ES',
     'CALSCALE:GREGORIAN',
     'METHOD:PUBLISH',
     `X-WR-CALNAME:${roomLabel}`,
     ...bookings.flatMap((booking) => [
       'BEGIN:VEVENT',
-      `UID:${room._id}-${booking._id}@boutiquecarajito.local`,
+      `UID:${room._id}-${booking._id}@altosdellago.local`,
       `DTSTAMP:${now}`,
       `DTSTART;VALUE=DATE:${formatIcalDate(booking.checkIn)}`,
       `DTEND;VALUE=DATE:${formatIcalDate(booking.checkOut)}`,

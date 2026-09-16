@@ -1,14 +1,15 @@
-# Boutique Carajito — Motor de reserva directa
+# Altos del Lago Lodge & Boutique — Motor de reserva directa
 
 Aplicación web de reservas para un alojamiento boutique: el **huésped** descubre
 habitaciones, elige fechas, suma servicios adicionales y reserva directamente con
 confirmación inmediata y un comprobante imprimible. El **administrador** gestiona
-el inventario de habitaciones y sus calendarios (a través de un panel protegido
-con pestañas para habitaciones y reservas).
+el inventario de habitaciones, sus calendarios y las reservas recibidas (a través
+de un panel protegido con pestañas).
 
-- **Frontend**: React 18 + Vite 5 (SPA en español, mobile-first).
-- **Backend**: Express + Mongoose (MERN), JWT para la zona de administración.
+- **Frontend**: React 18 + Vite 5 + **TypeScript** (SPA en español, mobile-first).
+- **Backend**: Express + Mongoose (MERN), JavaScript, JWT para la zona de administración.
 - **Base de datos**: MongoDB local (`mongodb://127.0.0.1:27017/hotel_booking_db`).
+- **Pagos**: Mercado Pago Checkout Pro (modo sandbox/test) además de los métodos simulados.
 
 ## Requisitos previos
 
@@ -21,10 +22,19 @@ con pestañas para habitaciones y reservas).
 
 ```
 hotel-booking-mvp/
-├── server/   # API Express (puerto 5000)
+├── server/   # API Express (puerto 5000) — JavaScript
+│   ├── controllers/paymentController.js  # integración Mercado Pago
+│   ├── routes/pagos.js                    # POST /api/pagos/crear-preferencia
 │   ├── .env        # configuración (crear a partir de .env.example)
 │   └── seed.js     # datos de ejemplo (admin + habitaciones)
-├── client/   # SPA React + Vite (dev en el puerto 5173)
+├── client/   # SPA React + Vite (dev en el puerto 5173) — TypeScript
+│   ├── tsconfig.json
+│   └── src/
+│       ├── types.ts               # tipos compartidos (Room, Booking, …)
+│       ├── services/              # api, dates, theme, site
+│       ├── hooks/useReveal.ts     # animaciones de aparición al hacer scroll
+│       ├── components/            # Hero, CheckoutModal, RoomsManager, …
+│       └── pages/                 # Home, Checkout, AdminDashboard, …
 └── README.md
 ```
 
@@ -53,12 +63,13 @@ cp .env.example .env   # en Windows: copy .env.example .env
 
 Edita `.env` si quieres cambiar valores:
 
-| Variable        | Descripción                                        | Valor por defecto                          |
-| --------------- | -------------------------------------------------- | ------------------------------------------ |
-| `PORT`          | Puerto del servidor Express                        | `5000`                                     |
-| `MONGO_URI`     | Cadena de conexión a MongoDB                       | `mongodb://127.0.0.1:27017/hotel_booking_db` |
-| `JWT_SECRET`    | Secreto para firmar los tokens JWT                 | (cámbialo a un valor largo y aleatorio)    |
-| `JWT_EXPIRES_IN`| Caducidad del token                                | `7d`                                       |
+| Variable          | Descripción                                             | Valor por defecto                            |
+| ----------------- | ------------------------------------------------------- | -------------------------------------------- |
+| `PORT`            | Puerto del servidor Express                             | `5000`                                       |
+| `MONGO_URI`       | Cadena de conexión a MongoDB                            | `mongodb://127.0.0.1:27017/hotel_booking_db` |
+| `JWT_SECRET`      | Secreto para firmar los tokens JWT                      | (cámbialo a un valor largo y aleatorio)      |
+| `JWT_EXPIRES_IN`  | Caducidad del token                                     | `7d`                                         |
+| `MP_ACCESS_TOKEN` | Access token **TEST** de Mercado Pago (Checkout Pro)    | (vacío: el pago online queda deshabilitado)  |
 
 ### 3. Sembrar la base de datos (solo la primera vez)
 
@@ -88,6 +99,14 @@ npm run dev
 El frontend de Vite redirige `/api/*` al backend del puerto 5000, así que solo
 visitas `http://localhost:5173`.
 
+### Scripts útiles del cliente
+
+| Comando             | Qué hace                                              |
+| ------------------- | ----------------------------------------------------- |
+| `npm run dev`       | Servidor de desarrollo de Vite                        |
+| `npm run typecheck` | Comprueba los tipos con `tsc --noEmit`                |
+| `npm run build`     | `tsc --noEmit && vite build` (falla si hay errores TS)|
+
 ### Modo producción (opcional)
 
 Compila el frontend y deja que Express lo sirva junto a la API:
@@ -115,22 +134,64 @@ El script `seed` crea la cuenta por defecto:
 Para acceder: pulsa **"Iniciar sesión / Admin"** en la barra superior e
 introduce las credenciales. El panel tiene dos pestañas:
 
-- **Habitaciones**: crear, editar tarifa por noche, número, activar/desactivar
-  disponibilidad y, por cada habitación, la sección **"Integraciones y
-  Calendario"** con su enlace iCal (`/api/rooms/:id/calendar.ics`) para pegar en
-  Booking/Airbnb y el campo para vincular un calendario externo (simulado en
-  `localStorage`).
+- **Habitaciones**: alta de habitaciones y **edición completa en línea** de cada
+  unidad (nombre, número, descripción, capacidad, tarifa por noche, servicios,
+  URL de imagen y activar/desactivar disponibilidad). Los cambios se guardan con
+  `PATCH /api/admin/habitaciones/:id` y cada fila muestra su propia confirmación
+  visual ("Guardado"). También incluye, por habitación, la sección
+  **"Integraciones y Calendario"** con su enlace iCal
+  (`/api/rooms/:id/calendar.ics`) para pegar en Booking/Airbnb y el campo para
+  vincular un calendario externo (simulado en `localStorage`).
 - **Reservas realizadas**: tabla con búsqueda por huésped o código, filtro por
   estado (confirmadas / pendientes / canceladas) y acciones rápidas de
-  confirmar y cancelar. Al cancelar una reserva se liberan sus noches; al
-  reactivarla se comprueba que las fechas sigan libres.
+  confirmar, reactivar y cancelar. Al cancelar una reserva se liberan sus noches;
+  al reactivarla se comprueba que las fechas sigan libres.
 
-## Novedades de la versión 1.4
+## Pagos con Mercado Pago (sandbox)
+
+El checkout ofrece una pestaña **"Pago online con Mercado Pago"** que usa
+Checkout Pro en modo de prueba:
+
+1. El frontend crea la reserva en estado `pending` con método `mercadopago`.
+2. Llama a `POST /api/pagos/crear-preferencia` con los datos de la estancia; el
+   servidor **recalcula el importe total** (noches × tarifa + extras) y crea la
+   preferencia con el SDK oficial (`mercadopago`), devolviendo
+   `{ preferenceId, initPoint, total }`.
+3. El navegador guarda la referencia de la reserva en `sessionStorage` y
+   redirige a `initPoint` (el `sandbox_init_point` en modo test).
+4. Al volver a `/confirmation?mp=success|pending|failure`, la app recupera la
+   reserva con la referencia guardada y muestra el comprobante con el aviso
+   correspondiente al estado del pago.
+
+Configuración: define `MP_ACCESS_TOKEN` con un token **TEST-** de Mercado Pago.
+Si está vacío (o la pasarela no responde), el endpoint devuelve `503` pero la
+reserva **igual queda registrada como pendiente** y el checkout muestra el
+comprobante con un aviso; no se bloquea al huésped. No se realizan cobros reales.
+
+## Novedades de la versión 1.5
+
+- **Migración del cliente a TypeScript**: todos los componentes y páginas son
+  `.tsx`, con tipos compartidos en `src/types.ts`, `tsconfig.json` estricto y
+  `tsc --noEmit` integrado en el build. El backend permanece en JavaScript.
+- **Rebranding completo** a *Altos del Lago Lodge & Boutique* (marca, contacto,
+  redes, títulos, vouchers y calendario iCal).
+- **Hero con video de fondo** (Coverr, dominio público) más capa de degradado y
+  póster de respaldo.
+- **Animaciones de aparición al hacer scroll** con `IntersectionObserver`
+  (`useReveal`), sin librerías y respetando `prefers-reduced-motion`.
+- **Mercado Pago Checkout Pro** en sandbox (ver arriba).
+- **Edición de habitaciones en el panel admin** campo por campo, con PATCH
+  dedicado y confirmación por fila.
+- **Correcciones de UI**: el resumen de la reserva ya no recorta valores largos
+  (correos, nombres compuestos) y las tarjetas del catálogo respetan el contexto
+  de apilamiento al elevarse en hover.
+
+## Funcionalidades base
 
 - **Checkout interactivo con upselling**: el huésped suma extras (desayuno,
   traslado, late check-out) con precio dinámico por noche antes de confirmar.
-- **Métodos de pago simulados**: tarjeta, transferencia bancaria o pago en el
-  check-in; el importe total y el método quedan guardados en la reserva.
+- **Métodos de pago**: tarjeta, transferencia bancaria, pago en el check-in o
+  Mercado Pago; el importe total y el método quedan guardados en la reserva.
 - **Comprobante imprimible**: la confirmación incluye un voucher que se guarda
   como PDF (`Imprimir / Guardar Voucher PDF`).
 - **Panel admin de reservas**: lista, busca, filtra, confirma o cancela reservas.
