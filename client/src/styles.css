@@ -275,6 +275,13 @@ button {
   font-size: 0.85rem;
   margin: 0.35rem 0 0;
 }
+/* Error inline de validación Zod bajo cada campo del formulario. */
+.field-error {
+  color: var(--danger);
+  font-size: 0.8rem;
+  font-weight: 500;
+  margin: 0.3rem 0 0;
+}
 .back-link {
   display: inline-block;
   margin-bottom: 1rem;

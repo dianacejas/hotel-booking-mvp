@@ -63,9 +63,17 @@ const getToken = (): string | null => localStorage.getItem('hb_token');
 
 export const api = {
   // ---- Habitaciones (público) ----------------------------------------------
-  listRooms(maxGuests: string | number): Promise<{ rooms: Room[] }> {
-    const qs = maxGuests ? `?maxGuests=${Number(maxGuests)}` : '';
-    return request(`/api/rooms${qs}`);
+  listRooms(params?: {
+    maxGuests?: string | number | null;
+    checkIn?: string | null;
+    checkOut?: string | null;
+  }): Promise<{ rooms: Room[] }> {
+    const qs = new URLSearchParams();
+    if (params?.maxGuests) qs.set('maxGuests', String(params.maxGuests));
+    if (params?.checkIn) qs.set('checkIn', params.checkIn);
+    if (params?.checkOut) qs.set('checkOut', params.checkOut);
+    const query = qs.toString();
+    return request(`/api/rooms${query ? `?${query}` : ''}`);
   },
   getRoom(id: string): Promise<{ room: Room }> {
     return request(`/api/rooms/${id}`);

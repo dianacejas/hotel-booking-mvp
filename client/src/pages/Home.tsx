@@ -1,6 +1,7 @@
-import { useEffect, useRef, useState } from 'react';
-import type { Room, SearchDates, SearchSubmit } from '../types';
-import api, { ApiError } from '../services/api';
+import { useRef, useState } from 'react';
+import type { SearchDates, SearchSubmit } from '../types';
+import { ApiError } from '../services/api';
+import { useRoomsQuery } from '../hooks/useRooms';
 import RoomCard from '../components/RoomCard';
 import Alert from '../components/Alert';
 import Hero from '../components/Hero';
@@ -12,30 +13,28 @@ import ReviewsSection from '../components/ReviewsSection';
 
 /**
  * Página principal pública.
- * El buscador del hero filtra habitaciones por número de huéspedes
- * (?guests=N), deja pre-cargadas las fechas elegidas en cada tarjeta y
- * desliza con suavidad hasta la sección de disponibilidad.
+ * El catálogo usa useRoomsQuery (TanStack Query): la búsqueda del hero cambia
+ * la clave de caché (guests + fechas) y dispara la refetch sin estado manual.
  */
 export default function Home() {
-  const [rooms, setRooms] = useState<Room[]>([]);
-  const [loading, setLoading] = useState(true);
-  const [error, setError] = useState('');
   const [guests, setGuests] = useState<string>(
     () => new URLSearchParams(window.location.search).get('guests') || ''
   );
   const [heroDates, setHeroDates] = useState<SearchDates>({ checkIn: '', checkOut: '' });
   const roomsRef = useRef<HTMLElement | null>(null);
 
-  useEffect(() => {
-    setLoading(true);
-    api
-      .listRooms(guests)
-      .then((data) => setRooms(data.rooms))
-      .catch((e) =>
-        setError(e instanceof ApiError ? e.message : 'No se pudieron cargar las habitaciones')
-      )
-      .finally(() => setLoading(false));
-  }, [guests]);
+  const roomsQuery = useRoomsQuery({
+    maxGuests: guests || null,
+    checkIn: heroDates.checkIn || null,
+    checkOut: heroDates.checkOut || null,
+  });
+  const rooms = roomsQuery.data ?? [];
+
+  const error = roomsQuery.isError
+    ? roomsQuery.error instanceof ApiError
+      ? roomsQuery.error.message
+      : 'No se pudieron cargar las habitaciones'
+    : '';
 
   const handleSearch = ({ checkIn, checkOut, guests: guestsCount }: SearchSubmit) => {
     setGuests(guestsCount);
@@ -80,7 +79,7 @@ export default function Home() {
         </div>
 
         {error && <Alert type="error">{error}</Alert>}
-        {loading ? (
+        {roomsQuery.isPending ? (
           <p className="muted">Cargando habitaciones…</p>
         ) : rooms.length === 0 ? (
           <Alert type="info">

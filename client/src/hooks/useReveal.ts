@@ -7,10 +7,10 @@ import { useEffect, useState } from 'react';
  * Es ligero (sin librerías de animación) y respeta prefers-reduced-motion.
  */
 export function useReveal<T extends HTMLElement>(threshold = 0.12): {
-  ref: React.RefObject<T | null>;
+  ref: React.RefObject<T>;
   visible: boolean;
 } {
-  const [ref, setRef] = useState<React.RefObject<T | null>>({ current: null });
+  const [ref, setRef] = useState<React.RefObject<T>>({ current: null });
   const [visible, setVisible] = useState(false);
 
   useEffect(() => {

@@ -2,6 +2,8 @@ import { useMemo, useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import type { CreateBookingPayload, ExtraOption, PaymentMethodId, Room } from '../types';
 import api, { ApiError } from '../services/api';
+import { bookingFormSchema } from '../schemas/bookingSchemas';
+import { useCreateBookingMutation } from '../hooks/useBookings';
 import Alert from './Alert';
 import { formatPrice, formatDate, toDateInputValue } from '../services/dates';
 
@@ -52,6 +54,7 @@ const BANK_DEMO = {
 
 type CardState = { number: string; expiry: string; cvc: string; holder: string };
 type GuestForm = { fullName: string; email: string; phone: string };
+type GuestFormErrors = Partial<Record<'nombreCompleto' | 'email' | 'telefono', string>>;
 
 function formatCardNumber(value: string): string {
   return value
@@ -100,12 +103,13 @@ type CheckoutModalProps = {
  */
 export default function CheckoutModal({ room, checkIn, checkOut, nights }: CheckoutModalProps) {
   const navigate = useNavigate();
+  const createBooking = useCreateBookingMutation();
   const [form, setForm] = useState<GuestForm>({ fullName: '', email: '', phone: '' });
+  const [fieldErrors, setFieldErrors] = useState<GuestFormErrors>({});
   const [selectedExtras, setSelectedExtras] = useState<string[]>([]);
   const [metodoPago, setMetodoPago] = useState<PaymentMethodId>('tarjeta');
   const [card, setCard] = useState<CardState>({ number: '', expiry: '', cvc: '', holder: '' });
   const [transferOk, setTransferOk] = useState(false);
-  const [submitting, setSubmitting] = useState(false);
   const [error, setError] = useState('');
 
   const roomSubtotal = Math.round(nights * room.pricePerNight * 100) / 100;
@@ -129,10 +133,32 @@ export default function CheckoutModal({ room, checkIn, checkOut, nights }: Check
       current.includes(id) ? current.filter((x) => x !== id) : [...current, id]
     );
 
-  const isFormValid =
-    form.fullName.trim().length > 1 &&
-    /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(form.email.trim()) &&
-    form.phone.trim().length >= 6;
+  // Datos en la forma que espera bookingFormSchema (nombres en español).
+  const guestFormInput = { nombreCompleto: form.fullName, email: form.email, telefono: form.phone };
+  const fullForm = {
+    ...guestFormInput,
+    checkIn: toDateInputValue(checkIn),
+    checkOut: toDateInputValue(checkOut),
+    extrasSeleccionados: selectedDetails.map((extra) => ({ name: extra.name, price: extra.total })),
+    metodoPago,
+  };
+  const schemaResult = bookingFormSchema.safeParse(fullForm);
+  const isFormValid = schemaResult.success;
+
+  // Valida al perder el foco y deja el mensaje inline en español.
+  // (Validamos toda la reserva: bookingFormSchema contiene un superRefine y
+  // Zod v4 prohíbe usar .pick() sobre esquemas con refinements.)
+  const validateField = (field: keyof GuestFormErrors) => {
+    const result = bookingFormSchema.safeParse(fullForm);
+    const message = result.success ? undefined : result.error.flatten().fieldErrors[field]?.[0];
+    setFieldErrors((prev) => (prev[field] === message ? prev : { ...prev, [field]: message }));
+  };
+
+  const clearFieldError = (field: keyof GuestFormErrors) =>
+    setFieldErrors((prev) => ({
+      ...prev,
+      [field]: prev[field] ? undefined : prev[field],
+    }));
 
   const cardDigits = card.number.replace(/\D/g, '');
   const expiryMatch = /^(\d{2})\/(\d{2})$/.exec(card.expiry);
@@ -147,11 +173,11 @@ export default function CheckoutModal({ room, checkIn, checkOut, nights }: Check
         ? transferOk
         : true;
 
-  const canSubmit = isFormValid && paymentValid && !submitting;
+  const canSubmit = isFormValid && paymentValid && !createBooking.isPending;
 
   const buildPayload = (): CreateBookingPayload => ({
     room: room._id,
-    guest: form,
+    guest: { fullName: form.fullName, email: form.email, phone: form.phone },
     checkIn: toDateInputValue(checkIn),
     checkOut: toDateInputValue(checkOut),
     extrasSeleccionados: selectedDetails.map((extra) => ({ name: extra.name, price: extra.total })),
@@ -162,14 +188,31 @@ export default function CheckoutModal({ room, checkIn, checkOut, nights }: Check
     e.preventDefault();
     if (!canSubmit) return;
     setError('');
-    setSubmitting(true);
+
+    // Validación Zod completa: campos del huésped + rango de fechas + extras.
+    const result = bookingFormSchema.safeParse(fullForm);
+    if (!result.success) {
+      const flat = result.error.flatten();
+      setFieldErrors({
+        nombreCompleto: flat.fieldErrors.nombreCompleto?.[0],
+        email: flat.fieldErrors.email?.[0],
+        telefono: flat.fieldErrors.telefono?.[0],
+      });
+      const message =
+        flat.fieldErrors.checkOut?.[0] || flat.fieldErrors.checkIn?.[0] || flat.formErrors[0];
+      if (message) setError(message);
+      return;
+    }
 
     const payload = buildPayload();
 
     try {
       if (metodoPago === 'mercadopago') {
         // 1) Reserva en pending con método "mercadopago".
-        const { booking } = await api.createBooking({ ...payload, origin: window.location.origin });
+        const { booking } = await createBooking.mutateAsync({
+          ...payload,
+          origin: window.location.origin,
+        });
         // 2) Guardamos clave de búsqueda para recuperar el comprobante al volver.
         try {
           sessionStorage.setItem(
@@ -196,16 +239,11 @@ export default function CheckoutModal({ room, checkIn, checkOut, nights }: Check
         return;
       }
 
-      // Pasarela simulada: espera la respuesta real de la API pero muestra el
-      // spinner al menos 1.5 s para que la transición sea creíble.
-      const [data] = await Promise.all([
-        api.createBooking(payload),
-        new Promise((resolve) => setTimeout(resolve, 1500)),
-      ]);
-      navigate('/confirmation', { state: { booking: data.booking } });
+      // Pasarela simulada: crea la reserva real y muestra el comprobante.
+      const createResult = await createBooking.mutateAsync(payload);
+      navigate('/confirmation', { state: { booking: createResult.booking } });
     } catch (err) {
       setError(err instanceof ApiError ? err.message : 'Algo salió mal. Inténtalo de nuevo.');
-      setSubmitting(false);
     }
   };
 
@@ -305,10 +343,17 @@ export default function CheckoutModal({ room, checkIn, checkOut, nights }: Check
           type="text"
           autoComplete="name"
           value={form.fullName}
-          onChange={(e) => setForm({ ...form, fullName: e.target.value })}
+          onChange={(e) => {
+            setForm({ ...form, fullName: e.target.value });
+            clearFieldError('nombreCompleto');
+          }}
+          onBlur={() => validateField('nombreCompleto')}
           placeholder="María García"
           required
         />
+        {fieldErrors.nombreCompleto && (
+          <p className="field-error">{fieldErrors.nombreCompleto}</p>
+        )}
         <label className="field-label" htmlFor="cc-email">
           Correo electrónico
         </label>
@@ -317,10 +362,15 @@ export default function CheckoutModal({ room, checkIn, checkOut, nights }: Check
           type="email"
           autoComplete="email"
           value={form.email}
-          onChange={(e) => setForm({ ...form, email: e.target.value })}
+          onChange={(e) => {
+            setForm({ ...form, email: e.target.value });
+            clearFieldError('email');
+          }}
+          onBlur={() => validateField('email')}
           placeholder="maria@ejemplo.com"
           required
         />
+        {fieldErrors.email && <p className="field-error">{fieldErrors.email}</p>}
         <label className="field-label" htmlFor="cc-phone">
           Teléfono
         </label>
@@ -329,10 +379,15 @@ export default function CheckoutModal({ room, checkIn, checkOut, nights }: Check
           type="tel"
           autoComplete="tel"
           value={form.phone}
-          onChange={(e) => setForm({ ...form, phone: e.target.value })}
+          onChange={(e) => {
+            setForm({ ...form, phone: e.target.value });
+            clearFieldError('telefono');
+          }}
+          onBlur={() => validateField('telefono')}
           placeholder="+34 600 000 000"
           required
         />
+        {fieldErrors.telefono && <p className="field-error">{fieldErrors.telefono}</p>}
       </section>
 
       <section className="card card-pad">
@@ -460,7 +515,7 @@ export default function CheckoutModal({ room, checkIn, checkOut, nights }: Check
       </section>
 
       <button type="submit" className="btn btn-primary btn-block" disabled={!canSubmit}>
-        {submitting
+        {createBooking.isPending
           ? 'Confirmando…'
           : metodoPago === 'mercadopago'
             ? `Pagar con Mercado Pago · ${formatPrice(total)}`
@@ -470,7 +525,7 @@ export default function CheckoutModal({ room, checkIn, checkOut, nights }: Check
         <Link to="/">← Volver a las habitaciones</Link>
       </p>
 
-      {submitting && (
+      {createBooking.isPending && (
         <div className="processing-overlay" role="status" aria-live="polite">
           <div className="processing-box">
             <span className="spinner" aria-hidden="true" />
