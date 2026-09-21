@@ -1,7 +1,6 @@
-import { useEffect, useState } from 'react';
 import { Link, useParams } from 'react-router-dom';
-import type { Room } from '../types';
-import api, { ApiError } from '../services/api';
+import { ApiError } from '../services/api';
+import { useRoomQuery } from '../hooks/useRooms';
 import Alert from '../components/Alert';
 import { formatPrice } from '../services/dates';
 
@@ -12,20 +11,18 @@ import { formatPrice } from '../services/dates';
  */
 export default function RoomDetail() {
   const { id } = useParams();
-  const [room, setRoom] = useState<Room | null>(null);
-  const [loading, setLoading] = useState(true);
-  const [error, setError] = useState('');
+  const roomQuery = useRoomQuery(id);
+  const room = roomQuery.data;
 
-  useEffect(() => {
-    api
-      .getRoom(id as string)
-      .then((data) => setRoom(data.room))
-      .catch((e) => setError(e instanceof ApiError ? e.message : 'No se pudo cargar la habitación'))
-      .finally(() => setLoading(false));
-  }, [id]);
-
-  if (loading) return <p className="muted">Cargando…</p>;
-  if (error) return <Alert type="error">{error}</Alert>;
+  if (roomQuery.isPending) return <p className="muted">Cargando…</p>;
+  if (roomQuery.isError)
+    return (
+      <Alert type="error">
+        {roomQuery.error instanceof ApiError
+          ? roomQuery.error.message
+          : 'No se pudo cargar la habitación'}
+      </Alert>
+    );
   if (!room) return <Alert type="info">Habitación no encontrada.</Alert>;
 
   return (

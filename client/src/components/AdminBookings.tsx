@@ -1,10 +1,10 @@
-import { useCallback, useEffect, useMemo, useState } from 'react';
-import type { Booking } from '../types';
-import api, { ApiError } from '../services/api';
+import { useMemo, useState } from 'react';
+import { ApiError } from '../services/api';
 import Alert from './Alert';
 import StatusBadge from './StatusBadge';
 import { payMethodLabel } from './CheckoutModal';
 import { formatPrice, formatDate, nightsBetween } from '../services/dates';
+import { useAdminBookingsQuery, useUpdateBookingStatusMutation } from '../hooks/useBookings';
 
 /** Filtros disponibles para el desplegable de estados. */
 const STATUS_FILTERS = [
@@ -16,42 +16,32 @@ const STATUS_FILTERS = [
 
 /**
  * Vista de "Reservas realizadas" del panel de administración.
- * Tabla responsive con búsqueda por huésped/código, filtro por estado y
- * acciones rápidas para confirmar, reactivar o cancelar cada reserva.
+ * Los datos vienen de TanStack Query (useAdminBookingsQuery); las acciones de
+ * confirmar / reactivar / cancelar usan useUpdateBookingStatusMutation, que
+ * invalida la caché al terminar para que la tabla se refresque sola.
  */
 export default function AdminBookings() {
-  const [bookings, setBookings] = useState<Booking[]>([]);
-  const [loading, setLoading] = useState(true);
+  const bookingsQuery = useAdminBookingsQuery();
+  const statusMutation = useUpdateBookingStatusMutation();
+  const bookings = bookingsQuery.data ?? [];
+
   const [error, setError] = useState('');
   const [query, setQuery] = useState('');
   const [statusFilter, setStatusFilter] = useState('all');
-  const [busyId, setBusyId] = useState<string | null>(null);
 
-  const load = useCallback(() => {
-    setLoading(true);
-    api
-      .listAdminBookings()
-      .then((data) => setBookings(data.bookings || []))
-      .catch((e) => setError(e instanceof ApiError ? e.message : 'No se pudieron cargar las reservas'))
-      .finally(() => setLoading(false));
-  }, []);
-
-  useEffect(() => {
-    load();
-  }, [load]);
-
-  const changeStatus = async (id: string, status: string) => {
-    setBusyId(id);
+  const changeStatus = (id: string, status: string) => {
     setError('');
-    try {
-      await api.updateAdminBookingStatus(id, status);
-      load();
-    } catch (e) {
-      setError(e instanceof ApiError ? e.message : 'No se pudo actualizar la reserva');
-    } finally {
-      setBusyId(null);
-    }
+    statusMutation.mutate(
+      { id, status },
+      {
+        onError: (err) =>
+          setError(err instanceof ApiError ? err.message : 'No se pudo actualizar la reserva'),
+      }
+    );
   };
+
+  // Deshabilita las acciones solo de la fila cuya reserva se está actualizando.
+  const busyId = statusMutation.isPending ? statusMutation.variables?.id : null;
 
   const filtered = useMemo(() => {
     const normalized = query.trim().toLowerCase();
@@ -65,6 +55,12 @@ export default function AdminBookings() {
       );
     });
   }, [bookings, query, statusFilter]);
+
+  const queryError = bookingsQuery.isError
+    ? bookingsQuery.error instanceof ApiError
+      ? bookingsQuery.error.message
+      : 'No se pudieron cargar las reservas'
+    : '';
 
   return (
     <div className="admin-bookings">
@@ -96,9 +92,9 @@ export default function AdminBookings() {
         </p>
       </div>
 
-      {error && <Alert type="error">{error}</Alert>}
+      {(queryError || error) && <Alert type="error">{queryError || error}</Alert>}
 
-      {loading ? (
+      {bookingsQuery.isPending ? (
         <p className="muted">Cargando reservas…</p>
       ) : filtered.length === 0 ? (
         <Alert type="info">No hay reservas que coincidan con la búsqueda o el filtro.</Alert>
