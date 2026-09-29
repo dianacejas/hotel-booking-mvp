@@ -2,3 +2,7 @@ node_modules/
 client/dist/
 .env
 *.log
+
+# Guias internas de trabajo: nunca se publican
+GUIA_INICIO.md
+guias-inicio/
